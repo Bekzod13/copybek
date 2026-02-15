@@ -1,0 +1,61 @@
+{
+  "name": "copybek",
+  "version": "1.0.0",
+  "description": "Personal clipboard history manager - Super+C to save, Super+V to paste",
+  "author": "Bekzod <bekzodjonsharobiddinov@gmail.com>",
+  "homepage": "https://github.com/Bekzod13/copybek",
+  "main": "dist-electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron . --no-sandbox --disable-gpu\"",
+    "electron:build": "vite build && electron-builder",
+    "dist": "vite build && electron-builder --linux"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "@nut-tree-fork/nut-js": "^4.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vite-plugin-electron": "^0.15.5",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.copybek.app",
+    "productName": "CopyBek",
+    "directories": {
+      "output": "release"
+    },
+    "linux": {
+      "target": ["deb", "AppImage"],
+      "category": "Utility",
+      "maintainer": "Bekzod <bekzodjonsharobiddinov@gmail.com>"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "logo.png"
+    ],
+    "linux": {
+      "target": ["deb", "AppImage"],
+      "category": "Utility",
+      "maintainer": "Bekzod <bekzodjonsharobiddinov@gmail.com>",
+      "icon": "logo.png"
+    }
+  }
+}
+
+

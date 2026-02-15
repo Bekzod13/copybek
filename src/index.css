@@ -1,0 +1,106 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* bekzod */
+/* bekzodjonsharovbiddinov@gmail.com */
+/* vvv */
+/* c */
+
+
+
+body {
+  margin: 0;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a1e;
+  color: #e4e4e7;
+  overflow: hidden;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+
+
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #27272a;
+  -webkit-app-region: drag;
+}
+
+.title {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #a1a1aa;
+}
+
+.shortcut-hint {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  color: #52525b;
+}
+
+.auto-paste-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #71717a;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.auto-paste-toggle input {
+  cursor: pointer;
+}
+
+.list {
+  flex: 1;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  overflow-y: auto;
+  -webkit-app-region: no-drag;
+}
+
+.item {
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s ease;
+}
+
+.item:hover {
+  background: #27272a;
+}
+
+.item.selected {
+  background: #3f3f46;
+}
+
+.empty {
+  padding: 24px 16px;
+  color: #71717a;
+  font-size: 13px;
+  text-align: center;
+}
