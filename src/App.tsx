@@ -1,11 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 
 const PREVIEW_LENGTH = 50
-const DEBUG = true
-
-function log(...args: unknown[]): void {
-  if (DEBUG) console.log('[CopyBek UI]', ...args)
-}
 
 interface HistoryItem {
   id: string
@@ -26,11 +21,8 @@ export default function App() {
   const loadHistory = useCallback(async () => {
     if (window.copybek) {
       const items = await window.copybek.getHistory()
-      log('loadHistory:', items.length, 'items')
       setHistory(items)
       setSelectedIndex(0)
-    } else {
-      log('loadHistory: copybek API not available')
     }
   }, [])
 
@@ -40,6 +32,13 @@ export default function App() {
       setAutoPaste(enabled)
     }
   }, [])
+
+  const handleSelect = useCallback(
+    async (item: HistoryItem) => {
+      if (window.copybek) await window.copybek.pasteText(item.text, autoPaste)
+    },
+    [autoPaste]
+  )
 
   useEffect(() => {
     loadHistory()
@@ -54,7 +53,6 @@ export default function App() {
 
   useEffect(() => {
     const cleanup = window.copybek?.onHistoryUpdated?.(items => {
-      log('onHistoryUpdated:', items.length, 'items')
       setHistory(items)
       setSelectedIndex(0)
     })
@@ -87,13 +85,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [history, selectedIndex])
-
-  const handleSelect = async (item: HistoryItem) => {
-    if (window.copybek) {
-      await window.copybek.pasteText(item.text, autoPaste)
-    }
-  }
+  }, [history, selectedIndex, handleSelect])
 
   const handleClick = (item: HistoryItem) => {
     if (window.copybek) {

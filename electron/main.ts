@@ -19,12 +19,6 @@ const SHOW_ARG = '--show'
 function shouldShowOnLaunch(): boolean {
   return process.argv.includes(SHOW_ARG)
 }
-const DEBUG = true
-
-function log(...args: unknown[]): void {
-  if (DEBUG) console.log('[CopyBek]', ...args)
-}
-
 interface HistoryItem {
   id: string
   text: string
@@ -42,6 +36,8 @@ let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let lastClipboardText = ''
 let blurHideTimeout: ReturnType<typeof setTimeout> | null = null
+let lastShowTime = 0
+const BLUR_GRACE_MS = 1500
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 function startClipboardMonitoring(): void {
@@ -51,14 +47,13 @@ function startClipboardMonitoring(): void {
       if (text && text !== lastClipboardText) {
         lastClipboardText = text
         addToHistory(text)
-        log('Clipboard: added', text.slice(0, 50) + (text.length > 50 ? '…' : ''))
       }
     } catch {
       // Ignore clipboard read errors
     }
   }
-  checkClipboard() // Initial check
-  setInterval(checkClipboard, 500)
+  checkClipboard()
+  setInterval(checkClipboard, 600)
 }
 
 function createWindow(): BrowserWindow {
@@ -87,26 +82,23 @@ function createWindow(): BrowserWindow {
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
   } else {
-    const htmlPath = path.join(__dirname, '../dist/index.html')
-    log('Loading from:', htmlPath)
-    mainWindow.loadFile(htmlPath).catch(err => {
-      log('Load error:', err)
-    })
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html')).catch(() => {})
   }
 
   mainWindow.webContents.once('did-finish-load', () => {
+    lastShowTime = Date.now()
     mainWindow?.show()
     mainWindow?.focus()
-    log('Window ready, showing')
   })
 
   mainWindow.on('blur', () => {
     if (blurHideTimeout) clearTimeout(blurHideTimeout)
+    const timeSinceShow = Date.now() - lastShowTime
+    const delay = timeSinceShow < BLUR_GRACE_MS ? BLUR_GRACE_MS - timeSinceShow : 400
     blurHideTimeout = setTimeout(() => {
-      log('Window: blur, hiding')
       mainWindow?.hide()
       blurHideTimeout = null
-    }, 400)
+    }, delay)
   })
 
   mainWindow.on('focus', () => {
@@ -124,13 +116,14 @@ function createWindow(): BrowserWindow {
 }
 
 function showWindow(): void {
-  log('Show window, history:', getHistory().length, 'items')
+  lastShowTime = Date.now()
   if (blurHideTimeout) {
     clearTimeout(blurHideTimeout)
     blurHideTimeout = null
   }
   if (!mainWindow) createWindow()
   positionWindowNearCursor()
+  mainWindow?.setVisibleOnAllWorkspaces(true)
   mainWindow?.show()
   mainWindow?.setAlwaysOnTop(true, 'floating')
   mainWindow?.focus()
@@ -195,35 +188,21 @@ function addToHistory(text: string): void {
 
   const updated = [newItem, ...history].slice(0, MAX_HISTORY_ITEMS)
   store.set('history', updated)
-  log('History: now', updated.length, 'items')
 }
 
 function onSaveClipboard(): void {
-  log('Shortcut: save clipboard')
   const text = clipboard.readText()
   addToHistory(text)
 }
 
 function registerShortcuts(): void {
-  const superC = globalShortcut.register('Super+C', onSaveClipboard)
-  log('Shortcut Super+C registered:', superC ? 'OK' : 'FAILED')
-  if (!superC && process.platform === 'linux') {
-    const alt = globalShortcut.register('Control+Alt+C', onSaveClipboard)
-    log('Fallback Control+Alt+C registered:', alt ? 'OK' : 'FAILED')
+  if (!globalShortcut.register('Super+C', onSaveClipboard) && process.platform === 'linux') {
+    globalShortcut.register('Control+Alt+C', onSaveClipboard)
   }
 
-  const showHistory = () => showWindow()
-
-  const shortcuts: [string, string][] = [
-    ['Super+V', 'primary'],
-    ['Meta+V', 'Meta'],
-    ['Control+Alt+V', 'fallback 1'],
-    ['Control+Shift+V', 'fallback 2'],
-    ['Alt+Shift+V', 'fallback 3']
-  ]
-  for (const [accel, name] of shortcuts) {
-    const ok = globalShortcut.register(accel, showHistory)
-    log(`Shortcut ${accel} (${name}):`, ok ? 'OK' : 'FAILED')
+  const shortcuts = ['Super+V', 'Meta+V', 'Control+Alt+V', 'Control+Shift+V', 'Alt+Shift+V']
+  for (const accel of shortcuts) {
+    if (globalShortcut.register(accel, showWindow)) break
   }
 }
 
@@ -237,20 +216,15 @@ if (!gotLock) {
   app.quit()
 } else {
   app.on('second-instance', (_event, argv) => {
-    if (argv.includes(SHOW_ARG)) {
-      log('Second instance with --show, focusing window')
-      showWindow()
-    }
+    if (argv.includes(SHOW_ARG)) showWindow()
   })
 }
 
 app.whenReady().then(() => {
-  log('App ready')
   createWindow()
   createTray()
   registerShortcuts()
   startClipboardMonitoring()
-  log('Clipboard monitoring started')
   if (shouldShowOnLaunch()) {
     showWindow()
   }
@@ -270,16 +244,10 @@ app.on('will-quit', () => {
   unregisterShortcuts()
 })
 
-ipcMain.handle('get-history', () => {
-  const history = getHistory()
-  log('IPC get-history:', history.length, 'items')
-  return history
-})
+ipcMain.handle('get-history', () => getHistory())
 
 ipcMain.handle('paste-text', async (_event, text: string, autoPaste: boolean) => {
   if (!text || typeof text !== 'string') return
-  log('IPC paste-text:', text.slice(0, 30) + '…', 'autoPaste:', autoPaste)
-
   clipboard.writeText(text)
 
   if (autoPaste) {

@@ -33,7 +33,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -77,6 +77,12 @@ body {
   list-style: none;
   overflow-y: auto;
   -webkit-app-region: no-drag;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  width: 0;
+  display: none;
 }
 
 .item {
